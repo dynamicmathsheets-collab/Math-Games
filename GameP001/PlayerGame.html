@@ -1,1 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Game Board Layout - Player View</title>
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
 
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f0c1b 0%, #1a102f 50%, #130924 100%);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- สี่เหลี่ยมใหญ่ตรงกลาง --- */
+        .center-board {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 820px;
+            height: 600px;
+            background: linear-gradient(145deg, #1e1535, #130c24);
+            border: 3px solid #a855f7;
+            border-radius: 24px;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.6);
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            gap: 10px;
+        }
+
+        /* --- ช่องบอกจำนวนการ์ดเหลือ ด้านบน (120x48px) --- */
+        .single-card-slot {
+            width: 120px;
+            height: 48px;
+            background: rgba(23, 15, 38, 0.95);
+            border: 2px dashed #f59e0b;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fbbf24;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+            flex-shrink: 0;
+        }
+
+        /* --- พื้นที่รองรับการ์ดบนโต๊ะกลาง 54 ช่อง (6 คอลัมน์ x 9 แถว) --- */
+        .board-card-slots-area {
+            border: 1px dashed rgba(216, 180, 254, 0.2);
+            border-radius: 12px;
+            padding: 10px;
+            
+            display: grid;
+            grid-template-columns: repeat(6, 120px);
+            grid-template-rows: repeat(9, 48px);
+            gap: 6px;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .board-drop-slot {
+            width: 120px;
+            height: 48px;
+            border: 1px dashed rgba(216, 180, 254, 0.15);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.015);
+            flex-shrink: 0;
+        }
+
+        /* --- กรอบเฟรมเก็บการ์ด 6 ใบ (2x3) --- */
+        .card-frame {
+            position: absolute;
+            width: 268px;
+            padding: 10px;
+            background: #1b132e;
+            border: 2px solid #581c87;
+            border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        /* ป้ายชื่อผู้เล่นเหนือเฟรม */
+        .player-label {
+            position: absolute;
+            top: -24px;
+            left: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #c084fc;
+            letter-spacing: 0.5px;
+        }
+
+        /* ตำแหน่ง 4 มุม */
+        .top-left     { top: 28px; left: 16px; border-color: #818cf8; } 
+        .top-right    { top: 28px; right: 16px; border-color: #f472b6; } 
+        .bottom-left  { bottom: 16px; left: 16px; border-color: #34d399; box-shadow: 0 0 15px rgba(52, 211, 153, 0.3); } /* ไฮไลท์ฝั่งผู้เล่นเรา */
+        .bottom-right { bottom: 16px; right: 16px; border-color: #c084fc; } 
+
+        /* การ์ดฝั่งซ้าย (สูตร) - 120px x 48px */
+        .card-formula {
+            width: 120px;
+            height: 48px;
+            background: linear-gradient(180deg, #2e1d4d 0%, #1a102f 100%);
+            border: 1px solid #6b21a8;
+            color: #f3e8ff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            padding: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        /* การ์ดฝั่งขวา (เฉลย) - 120px x 48px */
+        .card-answer {
+            width: 120px;
+            height: 48px;
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            color: #2e1065;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            padding: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* --- การ์ดคว่ำหน้า (สำหรับคู่แข่งอีก 3 คน) --- */
+        .card-back {
+            width: 120px;
+            height: 48px;
+            background: linear-gradient(135deg, #2a1b4e 0%, #160d29 100%);
+            border: 1px solid #4c1d95;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ลวดลายหลังการ์ด */
+        .card-back::before {
+            content: "dx";
+            font-family: serif;
+            font-style: italic;
+            font-size: 14px;
+            color: rgba(168, 85, 247, 0.25);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. ผู้เล่นคนอื่น (มุมซ้ายบน) - คว่ำการ์ด -->
+    <div class="card-frame top-left">
+        <span class="player-label" style="color:#818cf8;">Player 2</span>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+    </div>
+
+    <!-- 2. ผู้เล่นคนอื่น (มุมขวาบน) - คว่ำการ์ด -->
+    <div class="card-frame top-right">
+        <span class="player-label" style="color:#f472b6;">Player 3</span>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+    </div>
+
+    <!-- 3. การ์ดของเราเอง (มุมซ้ายล่าง) - หงายเห็นการ์ดชัดเจน -->
+    <div class="card-frame bottom-left">
+        <span class="player-label" style="color:#34d399;">Player 1 (คุณ)</span>
+        <div class="card-formula">$\frac{d}{dx}(u + v)$</div>
+        <div class="card-answer">$\frac{du}{dx} + \frac{dv}{dx}$</div>
+        <div class="card-formula">$\frac{d}{dx}(x)$</div>
+        <div class="card-answer">$1$</div>
+        <div class="card-formula">$\frac{d}{dx}(\tan u)$</div>
+        <div class="card-answer">$\sec^2 u \cdot \frac{du}{dx}$</div>
+    </div>
+
+    <!-- 4. ผู้เล่นคนอื่น (มุมขวาล่าง) - คว่ำการ์ด -->
+    <div class="card-frame bottom-right">
+        <span class="player-label" style="color:#c084fc;">Player 4</span>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+        <div class="card-back"></div>
+    </div>
+
+    <!-- สี่เหลี่ยมใหญ่ตรงกลาง -->
+    <div class="center-board">
+        <div class="single-card-slot">
+            <span>การ์ดเหลือ 54 ใบ</span>
+        </div>
+
+        <div class="board-card-slots-area">
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
+        </div>
+    </div>
+
+    <!-- KaTeX JavaScript -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false}
+            ]
+        });">
+    </script>
+
+</body>
+</html>
