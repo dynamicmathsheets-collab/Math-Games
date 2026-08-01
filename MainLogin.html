@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Derivative Card Game - Lobby & Game</title>
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f0c1b 0%, #1a102f 50%, #130924 100%);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            color: #f3e8ff;
+        }
+
+        /* ==================== 1. หน้า LOBBY ==================== */
+        #lobby-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background: linear-gradient(135deg, #0f0c1b 0%, #1a102f 50%, #130924 100%);
+        }
+
+        .lobby-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #c084fc;
+            text-shadow: 0 0 20px rgba(192, 132, 252, 0.4);
+            margin-bottom: 8px;
+        }
+
+        .lobby-subtitle {
+            font-size: 14px;
+            color: #a78bfa;
+            margin-bottom: 30px;
+        }
+
+        .lobby-container {
+            width: 750px;
+            background: #1b132e;
+            border: 2px solid #581c87;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .lobby-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #a855f7;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: #9333ea;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #3b0764;
+            color: #e9d5ff;
+            border: 1px solid #7e22ce;
+        }
+
+        .btn-secondary:hover {
+            background: #581c87;
+        }
+
+        .table-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .table-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-info h4 {
+            color: #f3e8ff;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .table-info p {
+            color: #a78bfa;
+            font-size: 12px;
+        }
+
+        .badge-players {
+            background: rgba(52, 211, 153, 0.15);
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .badge-spectators {
+            background: rgba(192, 132, 252, 0.15);
+            color: #c084fc;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .table-btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* ==================== 2. หน้า GAME BOARD ==================== */
+        #game-screen {
+            display: none; /* ซ่อนไว้ก่อน จะแสดงเมื่อกดเข้าโต๊ะ */
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* ปุ่มออกจากห้องกลับไป Lobby */
+        .leave-btn {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid #ef4444;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .leave-btn:hover { background: rgba(239, 68, 68, 0.4); }
+
+        /* โครงสร้างโต๊ะกลาง */
+        .center-board {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 820px;
+            height: 600px;
+            background: linear-gradient(145deg, #1e1535, #130c24);
+            border: 3px solid #a855f7;
+            border-radius: 24px;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .single-card-slot {
+            width: 120px;
+            height: 48px;
+            background: rgba(23, 15, 38, 0.95);
+            border: 2px dashed #f59e0b;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fbbf24;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+            flex-shrink: 0;
+        }
+
+        .board-card-slots-area {
+            border: 1px dashed rgba(216, 180, 254, 0.2);
+            border-radius: 12px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(6, 120px);
+            grid-template-rows: repeat(9, 48px);
+            gap: 6px;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .board-drop-slot {
+            width: 120px;
+            height: 48px;
+            border: 1px dashed rgba(216, 180, 254, 0.15);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.015);
+            flex-shrink: 0;
+        }
+
+        /* กรอบการ์ดผู้เล่น */
+        .card-frame {
+            position: absolute;
+            width: 268px;
+            padding: 10px;
+            background: #1b132e;
+            border: 2px solid #581c87;
+            border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .player-label {
+            position: absolute;
+            top: -24px;
+            left: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #c084fc;
+        }
+
+        .top-left     { top: 28px; left: 16px; border-color: #818cf8; } 
+        .top-right    { top: 28px; right: 16px; border-color: #f472b6; } 
+        .bottom-left  { bottom: 16px; left: 16px; border-color: #34d399; } 
+        .bottom-right { bottom: 16px; right: 16px; border-color: #c084fc; } 
+
+        .card-formula {
+            width: 120px;
+            height: 48px;
+            background: linear-gradient(180deg, #2e1d4d 0%, #1a102f 100%);
+            border: 1px solid #6b21a8;
+            color: #f3e8ff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            padding: 2px;
+        }
+
+        .card-answer {
+            width: 120px;
+            height: 48px;
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            color: #2e1065;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            padding: 2px;
+        }
+
+        .card-back {
+            width: 120px;
+            height: 48px;
+            background: linear-gradient(135deg, #2a1b4e 0%, #160d29 100%);
+            border: 1px solid #4c1d95;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .card-back::before {
+            content: "dx";
+            font-family: serif;
+            font-style: italic;
+            font-size: 14px;
+            color: rgba(168, 85, 247, 0.25);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== 1. LOBBY SCREEN ==================== -->
+    <div id="lobby-screen">
+        <h1 class="lobby-title">Derivative Card Game</h1>
+        <p class="lobby-subtitle">เลือกโต๊ะที่ต้องการเล่น หรือรับชมการแข่งขันสด</p>
+
+        <div class="lobby-container">
+            <div class="lobby-actions">
+                <h3>รายการโต๊ะที่เปิดอยู่</h3>
+                <button class="btn btn-primary" onclick="createTable()">+ สร้างโต๊ะใหม่</button>
+            </div>
+
+            <div class="table-list" id="table-container">
+                <!-- ตัวอย่างโต๊ะที่ 1 -->
+                <div class="table-card">
+                    <div class="table-info">
+                        <h4>โต๊ะการแข่งขัน #MATH-101</h4>
+                        <p>ผู้สร้าง: Prof. Calculus</p>
+                    </div>
+                    <div>
+                        <span class="badge-players">ผู้เล่น 3/4 คน</span>
+                        <span class="badge-spectators">ผู้ชม 12 คน</span>
+                    </div>
+                    <div class="table-btn-group">
+                        <button class="btn btn-primary" onclick="joinGame('player')">เล่น (Player)</button>
+                        <button class="btn btn-secondary" onclick="joinGame('spectator')">รับชม (Stream)</button>
+                    </div>
+                </div>
+
+                <!-- ตัวอย่างโต๊ะที่ 2 (ผู้เล่นเต็ม) -->
+                <div class="table-card">
+                    <div class="table-info">
+                        <h4>โต๊ะซ้อมสูตรดิฟ #MATH-202</h4>
+                        <p>ผู้สร้าง: Alex_Diff</p>
+                    </div>
+                    <div>
+                        <span class="badge-players" style="color: #f87171; background: rgba(248, 113, 113, 0.15);">ผู้เล่น 4/4 (เต็ม)</span>
+                        <span class="badge-spectators">ผู้ชม 5 คน</span>
+                    </div>
+                    <div class="table-btn-group">
+                        <button class="btn btn-secondary" style="opacity:0.5; cursor:not-allowed;" disabled>เต็ม</button>
+                        <button class="btn btn-secondary" onclick="joinGame('spectator')">รับชม (Stream)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 2. GAME SCREEN ==================== -->
+    <div id="game-screen">
+        <button class="leave-btn" onclick="leaveGame()">← ออกจากโต๊ะ</button>
+
+        <!-- โต๊ะผู้เล่น 4 มุม (จะเปลี่ยนตาม Role ที่เลือก) -->
+        <div id="player-frames-container"></div>
+
+        <!-- สี่เหลี่ยมใหญ่ตรงกลาง -->
+        <div class="center-board">
+            <div class="single-card-slot">
+                <span>การ์ดเหลือ 54 ใบ</span>
+            </div>
+            <div class="board-card-slots-area" id="board-slots"></div>
+        </div>
+    </div>
+
+    <!-- KaTeX JavaScript -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <script>
+        // สร้างช่องวางการ์ดกลางโต๊ะ 54 ช่อง
+        const boardSlots = document.getElementById('board-slots');
+        for (let i = 0; i < 54; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'board-drop-slot';
+            boardSlots.appendChild(slot);
+        }
+
+        // ฟังก์ชันเข้าร่วมเกม
+        function joinGame(role) {
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+
+            const container = document.getElementById('player-frames-container');
+            
+            if (role === 'player') {
+                // --- โหมดผู้เล่น (Player View): ภาพที่ 1 ---
+                container.innerHTML = `
+                    <div class="card-frame top-left">
+                        <span class="player-label" style="color:#818cf8;">Player 2</span>
+                        <div class="card-back"></div><div class="card-back"></div>
+                        <div class="card-back"></div><div class="card-back"></div>
+                        <div class="card-back"></div><div class="card-back"></div>
+                    </div>
+                    <div class="card-frame top-right">
+                        <span class="player-label" style="color:#f472b6;">Player 3</span>
+                        <div class="card-back"></div><div class="card-back"></div>
+                        <div class="card-back"></div><div class="card-back"></div>
+                        <div class="card-back"></div><div class="card-back"></div>
+                    </div>
+                    <div class="card-frame bottom-left" style="box-shadow: 0 0 15px rgba(52, 211, 153, 0.4);">
+                        <span class="player-label" style="color:#34d399;">Player 1 (คุณ)</span>
+                        <div class="card-formula">$\\frac{d}{dx}(u + v)$</div>
+                        <div class="card-answer">$\\frac{du}{dx} + \\frac{dv}{dx}$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(x)$</div>
+                        <div class="card-answer">$1$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(\\tan u)$</div>
+                        <div class="card-answer">$\\sec^2 u \\cdot \\frac{du}{dx}$</div>
+                    </div>
+                    <div class="card-frame bottom-right">
+                        <span class="player-label" style="color:#c084fc;">Player 4</span>
+                        <div class="card-back"></div><div class="card-back"></div>
+                        <div class="card-back"></div><div class="card-back"></div>
+                        <div class="card-back"></div><div class="card-back"></div>
+                    </div>
+                `;
+            } else {
+                // --- โหมดคนดู/ถ่ายทอดสด (Spectator View): ภาพที่ 2 ---
+                container.innerHTML = `
+                    <div class="card-frame top-left">
+                        <span class="player-label" style="color:#818cf8;">Player 2</span>
+                        <div class="card-formula">$\\frac{d}{dx}(c \\cdot u)$</div>
+                        <div class="card-answer">$c \\cdot \\frac{du}{dx}$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(C)$</div>
+                        <div class="card-answer">$0$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(\\cos u)$</div>
+                        <div class="card-answer">$-\\sin u \\cdot \\frac{du}{dx}$</div>
+                    </div>
+                    <div class="card-frame top-right">
+                        <span class="player-label" style="color:#f472b6;">Player 3</span>
+                        <div class="card-formula">$\\frac{d}{dx}(e^u)$</div>
+                        <div class="card-answer">$e^u \\cdot \\frac{du}{dx}$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(\\cosh u)$</div>
+                        <div class="card-answer">$\\sinh u \\cdot \\frac{du}{dx}$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(\\arcsin u)$</div>
+                        <div class="card-answer">$\\frac{1}{\\sqrt{1-u^2}} \\cdot \\frac{du}{dx}$</div>
+                    </div>
+                    <div class="card-frame bottom-left">
+                        <span class="player-label" style="color:#34d399;">Player 1</span>
+                        <div class="card-formula">$\\frac{d}{dx}(u + v)$</div>
+                        <div class="card-answer">$\\frac{du}{dx} + \\frac{dv}{dx}$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(x)$</div>
+                        <div class="card-answer">$1$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(\\tan u)$</div>
+                        <div class="card-answer">$\\sec^2 u \\cdot \\frac{du}{dx}$</div>
+                    </div>
+                    <div class="card-frame bottom-right">
+                        <span class="player-label" style="color:#c084fc;">Player 4</span>
+                        <div class="card-formula">$\\frac{d}{dx}(\\ln u)$</div>
+                        <div class="card-answer">$\\frac{1}{u} \\cdot \\frac{du}{dx}$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(\\sinh u)$</div>
+                        <div class="card-answer">$\\cosh u \\cdot \\frac{du}{dx}$</div>
+                        <div class="card-formula">$\\frac{d}{dx}(\\arctan u)$</div>
+                        <div class="card-answer">$\\frac{1}{1+u^2} \\cdot \\frac{du}{dx}$</div>
+                    </div>
+                `;
+            }
+
+            // แสดงสูตรคณิตศาสตร์ด้วย KaTeX
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ]
+                    });
+                }
+            }, 50);
+        }
+
+        // ฟังก์ชันสร้างโต๊ะใหม่
+        function createTable() {
+            const randomId = Math.floor(100 + Math.random() * 900);
+            const tableContainer = document.getElementById('table-container');
+            const newTable = document.createElement('div');
+            newTable.className = 'table-card';
+            newTable.innerHTML = `
+                <div class="table-info">
+                    <h4>โต๊ะการแข่งขัน #MATH-${randomId}</h4>
+                    <p>ผู้สร้าง: คุณ</p>
+                </div>
+                <div>
+                    <span class="badge-players">ผู้เล่น 1/4 คน</span>
+                    <span class="badge-spectators">ผู้ชม 0 คน</span>
+                </div>
+                <div class="table-btn-group">
+                    <button class="btn btn-primary" onclick="joinGame('player')">เล่น (Player)</button>
+                    <button class="btn btn-secondary" onclick="joinGame('spectator')">รับชม (Stream)</button>
+                </div>
+            `;
+            tableContainer.prepend(newTable);
+        }
+
+        // ฟังก์ชันออกจากเกม
+        function leaveGame() {
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('lobby-screen').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
