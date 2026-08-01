@@ -1,1 +1,111 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คลังเกมคณิตศาสตร์ - Math Games</title>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 8px;
+    }
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 800px;
+    }
+    .game-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .game-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #0f172a;
+    }
+    .game-desc {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+    .btn {
+      display: inline-block;
+      text-align: center;
+      background-color: var(--primary-color);
+      color: white;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .btn:hover {
+      background-color: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
 
+  <header>
+    <h1>🎯 ศูนย์รวมเกมคณิตศาสตร์</h1>
+    <p>เลือกเล่นเกมฝึกทักษะคณิตศาสตร์ตามรายการด้านล่างได้เลยครับ</p>
+  </header>
+
+  <main class="game-grid">
+    <!-- เกมที่ 1 -->
+    <div class="game-card">
+      <div>
+        <div class="game-title">🎮 เกมคณิตศาสตร์ (GameP001)</div>
+        <div class="game-desc">เข้าสู่ระบบเพื่อเริ่มเล่นเกมคณิตศาสตร์โหมดผู้เล่นและพรีวิว</div>
+      </div>
+      <a href="./GameP001/MainLogin.html" class="btn">เข้าสู่เกม</a>
+    </div>
+
+    <!-- โครงสำหรับเพิ่มเกมในอนาคต (ปลดล็อกบรรทัดด้านล่างเมื่อมีเกมเพิ่ม) -->
+    <!--
+    <div class="game-card">
+      <div>
+        <div class="game-title">🎲 เกมคณิตศาสตร์ (GameP002)</div>
+        <div class="game-desc">คำอธิบายเกมที่ 2...</div>
+      </div>
+      <a href="./GameP002/MainLogin.html" class="btn">เข้าสู่เกม</a>
+    </div>
+    -->
+  </main>
+
+</body>
+</html>
