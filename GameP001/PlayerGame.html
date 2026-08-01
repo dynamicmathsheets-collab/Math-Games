@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Derivative Card Game - Player View</title>
+    
+    <!-- KaTeX CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f0c1b 0%, #1a102f 50%, #130924 100%);
+            height: 100vh; width: 100vw; overflow: hidden; position: relative; color: #f3e8ff;
+        }
+        
+        /* แถบปุ่มควบคุมด้านบน */
+        .top-controls {
+            position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 50;
+            display: flex; gap: 12px; align-items: center;
+        }
+
+        .btn {
+            padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease; outline: none; border: none;
+        }
+
+        .btn-leave {
+            background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid #ef4444;
+        }
+        .btn-leave:hover {
+            background: rgba(239, 68, 68, 0.3); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-start {
+            background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid #22c55e;
+        }
+        .btn-start:hover {
+            background: rgba(34, 197, 94, 0.4); box-shadow: 0 0 12px rgba(34, 197, 94, 0.5); transform: scale(1.03);
+        }
+
+        /* กระดานกลาง */
+        .center-board {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 820px; height: 580px; background: linear-gradient(145deg, #1e1535, #130c24);
+            border: 3px solid #a855f7; border-radius: 24px; padding: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+        }
+        .board-card-slots-area { 
+            display: grid; grid-template-columns: repeat(6, 120px); grid-template-rows: repeat(9, 48px); gap: 6px; 
+        }
+        .board-drop-slot { 
+            width: 120px; height: 48px; border: 1px dashed rgba(216, 180, 254, 0.15); 
+            border-radius: 8px; background: rgba(255, 255, 255, 0.015); 
+            display: flex; align-items: center; justify-content: center; 
+        }
+
+        /* กรอบที่นั่งผู้เล่น 4 มุม */
+        .player-wrapper {
+            position: absolute; width: 280px; display: flex; flex-direction: column; gap: 6px;
+        }
+        
+        .card-frame {
+            width: 100%; min-height: 178px; padding: 10px; background: #1b132e;
+            border: 2px solid #581c87; border-radius: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            position: relative; transition: all 0.3s ease;
+        }
+
+        .action-btn-group {
+            display: flex; gap: 4px; justify-content: space-between; width: 100%;
+        }
+
+        .action-btn {
+            flex: 1; padding: 5px 2px; font-size: 10px; font-weight: bold; border-radius: 6px;
+            background: #3b0764; color: #d8b4fe; border: 1px solid #7e22ce; cursor: pointer; transition: 0.2s;
+            text-align: center;
+        }
+        .action-btn:hover:not(:disabled) { background: #6b21a8; color: #fff; box-shadow: 0 0 8px #a855f7; }
+        .action-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #4c1d95; }
+
+        .seat-header {
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
+            position: absolute; top: -24px; left: 0; padding: 0 4px;
+        }
+        .seat-label { font-size: 13px; font-weight: bold; color: #a78bfa; }
+        .score-badge { font-size: 12px; font-weight: bold; color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.3); }
+
+        /* ตำแหน่งผู้เล่น 4 มุม */
+        .p-pos-1 { bottom: 16px; left: 16px; }  /* Player 1: ซ้ายล่าง */
+        .p-pos-2 { top: 32px; left: 16px; }     /* Player 2: ซ้ายบน */
+        .p-pos-3 { top: 32px; right: 16px; }    /* Player 3: ขวาบน */
+        .p-pos-4 { bottom: 16px; right: 16px; } /* Player 4: ขวาล่าง */
+
+        /* ขอบสว่างสำหรับผู้เล่นตัวเอง และตาที่กำลังเล่น */
+        .my-frame { 
+            border-color: #38bdf8 !important; 
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5), inset 0 0 10px rgba(56, 189, 248, 0.2); 
+        }
+        .my-frame .seat-label { color: #38bdf8 !important; font-size: 14px; text-shadow: 0 0 6px rgba(56, 189, 248, 0.6); }
+
+        .active-turn-frame {
+            border-color: #22c55e !important;
+            box-shadow: 0 0 18px rgba(34, 197, 94, 0.6) !important;
+        }
+
+        /* สไตล์การ์ด */
+        .card-item { 
+            width: 120px; height: 48px; border-radius: 8px; display: flex; align-items: center; 
+            justify-content: center; font-size: 11px; user-select: none; transition: 0.2s; cursor: pointer;
+        }
+        .card-formula { background: linear-gradient(180deg, #2e1d4d 0%, #1a102f 100%); border: 1px solid #6b21a8; color: #f3e8ff; }
+        .card-answer { background: #faf5ff; border: 1px solid #e9d5ff; color: #2e1065; }
+        
+        .card-selected {
+            border: 2px solid #fbbf24 !important;
+            box-shadow: 0 0 10px #fbbf24 !important;
+            transform: scale(1.04);
+        }
+
+        .card-back { 
+            background: linear-gradient(135deg, #3b0764 0%, #1e1b4b 100%); 
+            border: 1px solid #7e22ce; color: #a855f7; font-size: 16px; font-weight: bold; cursor: default; 
+        }
+        .card-back::after { content: "🂠"; }
+        
+        .empty-slot { width: 120px; height: 48px; border: 1px dashed rgba(168, 85, 247, 0.15); border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div class="top-controls">
+        <button id="start-game-btn" class="btn btn-start">
+            ▶ เริ่มการแข่งขัน
+        </button>
+        <button id="leave-game-btn" class="btn btn-leave">
+            ← ออกจากเกม
+        </button>
+    </div>
+
+    <!-- Player 1: มุมซ้ายล่าง (ปุ่มอยู่แถวบน) -->
+    <div class="player-wrapper p-pos-1" id="wrap-seat-1">
+        <div class="seat-header"><span class="seat-label" id="label-seat-1">Player 1</span><span class="score-badge" id="score-1">0 แต้ม</span></div>
+        <div class="action-btn-group" id="btn-group-1">
+            <button class="action-btn" onclick="actTakeFriend(1)">หยิบเพื่อนทิ้ง</button>
+            <button class="action-btn" onclick="actDrawDeck(1)">หยิบจากกอง</button>
+            <button class="action-btn" onclick="actMatchCards(1)">จับคู่การ์ด</button>
+            <button class="action-btn" onclick="actDiscard(1)">ทิ้งการ์ด</button>
+        </div>
+        <div class="card-frame" id="frame-seat-1"></div>
+    </div>
+
+    <!-- Player 2: มุมซ้ายบน (ปุ่มอยู่แถวล่าง) -->
+    <div class="player-wrapper p-pos-2" id="wrap-seat-2">
+        <div class="seat-header"><span class="seat-label" id="label-seat-2">Player 2</span><span class="score-badge" id="score-2">0 แต้ม</span></div>
+        <div class="card-frame" id="frame-seat-2"></div>
+        <div class="action-btn-group" id="btn-group-2">
+            <button class="action-btn" onclick="actTakeFriend(2)">หยิบเพื่อนทิ้ง</button>
+            <button class="action-btn" onclick="actDrawDeck(2)">หยิบจากกอง</button>
+            <button class="action-btn" onclick="actMatchCards(2)">จับคู่การ์ด</button>
+            <button class="action-btn" onclick="actDiscard(2)">ทิ้งการ์ด</button>
+        </div>
+    </div>
+
+    <!-- Player 3: มุมขวาบน (ปุ่มอยู่แถวล่าง) -->
+    <div class="player-wrapper p-pos-3" id="wrap-seat-3">
+        <div class="seat-header"><span class="seat-label" id="label-seat-3">Player 3</span><span class="score-badge" id="score-3">0 แต้ม</span></div>
+        <div class="card-frame" id="frame-seat-3"></div>
+        <div class="action-btn-group" id="btn-group-3">
+            <button class="action-btn" onclick="actTakeFriend(3)">หยิบเพื่อนทิ้ง</button>
+            <button class="action-btn" onclick="actDrawDeck(3)">หยิบจากกอง</button>
+            <button class="action-btn" onclick="actMatchCards(3)">จับคู่การ์ด</button>
+            <button class="action-btn" onclick="actDiscard(3)">ทิ้งการ์ด</button>
+        </div>
+    </div>
+
+    <!-- Player 4: มุมขวาล่าง (ปุ่มอยู่แถวบน) -->
+    <div class="player-wrapper p-pos-4" id="wrap-seat-4">
+        <div class="seat-header"><span class="seat-label" id="label-seat-4">Player 4</span><span class="score-badge" id="score-4">0 แต้ม</span></div>
+        <div class="action-btn-group" id="btn-group-4">
+            <button class="action-btn" onclick="actTakeFriend(4)">หยิบเพื่อนทิ้ง</button>
+            <button class="action-btn" onclick="actDrawDeck(4)">หยิบจากกอง</button>
+            <button class="action-btn" onclick="actMatchCards(4)">จับคู่การ์ด</button>
+            <button class="action-btn" onclick="actDiscard(4)">ทิ้งการ์ด</button>
+        </div>
+        <div class="card-frame" id="frame-seat-4"></div>
+    </div>
+
+    <!-- กระดานกลาง -->
+    <div class="center-board">
+        <div style="color: #fbbf24; font-size: 13px; font-weight: bold;" id="game-status">การ์ดในกองเหลือ 74 ใบ</div>
+        <div class="board-card-slots-area" id="board-slots"></div>
+    </div>
+
+    <!-- Firebase Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, update, remove, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Firebase Config จริงของปู่
+        const firebaseConfig = {
+            apiKey: "AIzaSyDp3MXKZTOyVw_bJ2TJiSv_apHfC3UQEnQ",
+            authDomain: "multiplayer-math-game-e021c.firebaseapp.com",
+            databaseURL: "https://multiplayer-math-game-e021c-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "multiplayer-math-game-e021c",
+            storageBucket: "multiplayer-math-game-e021c.firebasestorage.app",
+            messagingSenderId: "389643255813",
+            appId: "1:389643255813:web:b4db5d43e392601a7d5c6c",
+            measurementId: "G-RYP3M031NV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const tableId = sessionStorage.getItem('current_table_id') || 'MATH-101';
+        const mySlotKey = sessionStorage.getItem('my_player_slot') || 'player1'; 
+        const mySeatNumber = parseInt(mySlotKey.replace('player', '')) || 1;
+
+        let selectedCards = [];
+        let localGameState = null;
+
+        // คลังการ์ดอนุพันธ์ 37 คู่ (74 ใบ)
+        const CARD_DB = [
+            { id: '1A', pairId: 1, type: 'formula', text: '$\\frac{d}{dx}(c \\cdot u)$' }, { id: '1B', pairId: 1, type: 'answer', text: '$c \\cdot \\frac{du}{dx}$' },
+            { id: '2A', pairId: 2, type: 'formula', text: '$\\frac{d}{dx}(u + v)$' }, { id: '2B', pairId: 2, type: 'answer', text: '$\\frac{du}{dx} + \\frac{dv}{dx}$' },
+            { id: '3A', pairId: 3, type: 'formula', text: '$\\frac{d}{dx}(u - v)$' }, { id: '3B', pairId: 3, type: 'answer', text: '$\\frac{du}{dx} - \\frac{dv}{dx}$' },
+            { id: '4A', pairId: 4, type: 'formula', text: '$\\frac{d}{dx}(u \\cdot v)$' }, { id: '4B', pairId: 4, type: 'answer', text: '$u\\frac{dv}{dx} + v\\frac{du}{dx}$' },
+            { id: '5A', pairId: 5, type: 'formula', text: '$\\frac{d}{dx}(\\frac{u}{v})$' }, { id: '5B', pairId: 5, type: 'answer', text: '$\\frac{v\\frac{du}{dx} - u\\frac{dv}{dx}}{v^2}$' },
+            { id: '6A', pairId: 6, type: 'formula', text: '$\\frac{d}{dx}(C)$' }, { id: '6B', pairId: 6, type: 'answer', text: '$0$' },
+            { id: '7A', pairId: 7, type: 'formula', text: '$\\frac{d}{dx}(x)$' }, { id: '7B', pairId: 7, type: 'answer', text: '$1$' },
+            { id: '8A', pairId: 8, type: 'formula', text: '$\\frac{d}{dx}(u^n)$' }, { id: '8B', pairId: 8, type: 'answer', text: '$nu^{n-1} \\cdot \\frac{du}{dx}$' },
+            { id: '9A', pairId: 9, type: 'formula', text: '$\\frac{d}{dx}(\\sqrt{u})$' }, { id: '9B', pairId: 9, type: 'answer', text: '$\\frac{1}{2\\sqrt{u}} \\cdot \\frac{du}{dx}$' },
+            { id: '10A', pairId: 10, type: 'formula', text: '$\\frac{d}{dx}(\\sin u)$' }, { id: '10B', pairId: 10, type: 'answer', text: '$\\cos u \\cdot \\frac{du}{dx}$' },
+            { id: '11A', pairId: 11, type: 'formula', text: '$\\frac{d}{dx}(\\cos u)$' }, { id: '11B', pairId: 11, type: 'answer', text: '$-\\sin u \\cdot \\frac{du}{dx}$' },
+            { id: '12A', pairId: 12, type: 'formula', text: '$\\frac{d}{dx}(\\tan u)$' }, { id: '12B', pairId: 12, type: 'answer', text: '$\\sec^2 u \\cdot \\frac{du}{dx}$' },
+            { id: '13A', pairId: 13, type: 'formula', text: '$\\frac{d}{dx}(\\sec u)$' }, { id: '13B', pairId: 13, type: 'answer', text: '$\\sec u \\tan u \\cdot \\frac{du}{dx}$' },
+            { id: '14A', pairId: 14, type: 'formula', text: '$\\frac{d}{dx}(\\csc u)$' }, { id: '14B', pairId: 14, type: 'answer', text: '$-\\csc u \\cot u \\cdot \\frac{du}{dx}$' },
+            { id: '15A', pairId: 15, type: 'formula', text: '$\\frac{d}{dx}(\\cot u)$' }, { id: '15B', pairId: 15, type: 'answer', text: '$-\\csc^2 u \\cdot \\frac{du}{dx}$' },
+            { id: '16A', pairId: 16, type: 'formula', text: '$\\frac{d}{dx}(e^u)$' }, { id: '16B', pairId: 16, type: 'answer', text: '$e^u \\cdot \\frac{du}{dx}$' },
+            { id: '17A', pairId: 17, type: 'formula', text: '$\\frac{d}{dx}(a^u)$' }, { id: '17B', pairId: 17, type: 'answer', text: '$a^u \\ln(a) \\cdot \\frac{du}{dx}$' },
+            { id: '18A', pairId: 18, type: 'formula', text: '$\\frac{d}{dx}(\\ln u)$' }, { id: '18B', pairId: 18, type: 'answer', text: '$\\frac{1}{u} \\cdot \\frac{du}{dx}$' },
+            { id: '19A', pairId: 19, type: 'formula', text: '$\\frac{d}{dx}(\\log_a u)$' }, { id: '19B', pairId: 19, type: 'answer', text: '$\\frac{1}{u \\ln(a)} \\cdot \\frac{du}{dx}$' },
+            { id: '20A', pairId: 20, type: 'formula', text: '$\\frac{d}{dx}(\\sinh u)$' }, { id: '20B', pairId: 20, type: 'answer', text: '$\\cosh u \\cdot \\frac{du}{dx}$' },
+            { id: '21A', pairId: 21, type: 'formula', text: '$\\frac{d}{dx}(\\cosh u)$' }, { id: '21B', pairId: 21, type: 'answer', text: '$\\sinh u \\cdot \\frac{du}{dx}$' },
+            { id: '22A', pairId: 22, type: 'formula', text: '$\\frac{d}{dx}(\\tanh u)$' }, { id: '22B', pairId: 22, type: 'answer', text: '$\\operatorname{sech}^2 u \\cdot \\frac{du}{dx}$' },
+            { id: '23A', pairId: 23, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{sech} u)$' }, { id: '23B', pairId: 23, type: 'answer', text: '$-\\operatorname{sech} u \\tanh u \\cdot \\frac{du}{dx}$' },
+            { id: '24A', pairId: 24, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{csch} u)$' }, { id: '24B', pairId: 24, type: 'answer', text: '$-\\operatorname{csch} u \\coth u \\cdot \\frac{du}{dx}$' },
+            { id: '25A', pairId: 25, type: 'formula', text: '$\\frac{d}{dx}(\\coth u)$' }, { id: '25B', pairId: 25, type: 'answer', text: '$-\\operatorname{csch}^2 u \\cdot \\frac{du}{dx}$' },
+            { id: '26A', pairId: 26, type: 'formula', text: '$\\frac{d}{dx}(\\arcsin u)$' }, { id: '26B', pairId: 26, type: 'answer', text: '$\\frac{1}{\\sqrt{1-u^2}} \\cdot \\frac{du}{dx}$' },
+            { id: '27A', pairId: 27, type: 'formula', text: '$\\frac{d}{dx}(\\arccos u)$' }, { id: '27B', pairId: 27, type: 'answer', text: '$-\\frac{1}{\\sqrt{1-u^2}} \\cdot \\frac{du}{dx}$' },
+            { id: '28A', pairId: 28, type: 'formula', text: '$\\frac{d}{dx}(\\arctan u)$' }, { id: '28B', pairId: 28, type: 'answer', text: '$\\frac{1}{1+u^2} \\cdot \\frac{du}{dx}$' },
+            { id: '29A', pairId: 29, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arcsec} u)$' }, { id: '29B', pairId: 29, type: 'answer', text: '$\\frac{1}{|u|\\sqrt{u^2-1}} \\cdot \\frac{du}{dx}$' },
+            { id: '30A', pairId: 30, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arccsc} u)$' }, { id: '30B', pairId: 30, type: 'answer', text: '$-\\frac{1}{|u|\\sqrt{u^2-1}} \\cdot \\frac{du}{dx}$' },
+            { id: '31A', pairId: 31, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arccot} u)$' }, { id: '31B', pairId: 31, type: 'answer', text: '$-\\frac{1}{1+u^2} \\cdot \\frac{du}{dx}$' },
+            { id: '32A', pairId: 32, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arcsinh} u)$' }, { id: '32B', pairId: 32, type: 'answer', text: '$\\frac{1}{\\sqrt{u^2+1}} \\cdot \\frac{du}{dx}$' },
+            { id: '33A', pairId: 33, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arccosh} u)$' }, { id: '33B', pairId: 33, type: 'answer', text: '$\\frac{1}{\\sqrt{u^2-1}} \\cdot \\frac{du}{dx}$' },
+            { id: '34A', pairId: 34, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arctanh} u)$' }, { id: '34B', pairId: 34, type: 'answer', text: '$\\frac{1}{1-u^2} \\cdot \\frac{du}{dx}$' },
+            { id: '35A', pairId: 35, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arcsech} u)$' }, { id: '35B', pairId: 35, type: 'answer', text: '$-\\frac{1}{u\\sqrt{1-u^2}} \\cdot \\frac{du}{dx}$' },
+            { id: '36A', pairId: 36, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arccsch} u)$' }, { id: '36B', pairId: 36, type: 'answer', text: '$-\\frac{1}{|u|\\sqrt{1+u^2}} \\cdot \\frac{du}{dx}$' },
+            { id: '37A', pairId: 37, type: 'formula', text: '$\\frac{d}{dx}(\\operatorname{arccoth} u)$' }, { id: '37B', pairId: 37, type: 'answer', text: '$\\frac{1}{1-u^2} \\cdot \\frac{du}{dx}$' }
+        ];
+
+        const tableRef = ref(db, `tables/${tableId}`);
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            setupBoardUI();
+
+            const startBtn = document.getElementById('start-game-btn');
+            if (startBtn) startBtn.addEventListener('click', onClickStartGame);
+
+            const leaveBtn = document.getElementById('leave-game-btn');
+            if (leaveBtn) leaveBtn.addEventListener('click', leaveGameAndRedirect);
+            
+            onValue(tableRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+                localGameState = data;
+                updateGameUI(data);
+            });
+        });
+
+        function setupBoardUI() {
+            const boardSlots = document.getElementById('board-slots');
+            boardSlots.innerHTML = '';
+            for (let i = 0; i < 54; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'board-drop-slot';
+                slot.id = `board-slot-${i}`;
+                boardSlots.appendChild(slot);
+            }
+        }
+
+        function updateGameUI(data) {
+            const currentTurn = data.currentTurn || 1;
+            const gameStatus = data.gameStatus || 'waiting';
+
+            [1, 2, 3, 4].forEach(pNum => {
+                const frame = document.getElementById(`frame-seat-${pNum}`);
+                const label = document.getElementById(`label-seat-${pNum}`);
+                const scoreBadge = document.getElementById(`score-${pNum}`);
+                const btnGroup = document.getElementById(`btn-group-${pNum}`);
+
+                const isMe = (pNum === mySeatNumber);
+                const isCurrentTurn = (pNum === currentTurn && gameStatus === 'playing');
+
+                if (isMe) {
+                    frame.classList.add('my-frame');
+                    label.innerText = `Player ${pNum} (คุณ)`;
+                } else {
+                    frame.classList.remove('my-frame');
+                    label.innerText = `Player ${pNum}`;
+                }
+
+                if (isCurrentTurn) {
+                    frame.classList.add('active-turn-frame');
+                } else {
+                    frame.classList.remove('active-turn-frame');
+                }
+
+                const score = (data.scores && data.scores[`player${pNum}`]) || 0;
+                scoreBadge.innerText = `${score} แต้ม`;
+
+                const buttons = btnGroup.querySelectorAll('.action-btn');
+                buttons.forEach(btn => {
+                    btn.disabled = !(isMe && isCurrentTurn && gameStatus === 'playing');
+                });
+
+                renderPlayerHand(pNum, data.playerHands ? data.playerHands[`player${pNum}`] : [], isMe);
+            });
+
+            renderBoardCards(data.boardDiscards || [], data.matchedBoard || []);
+
+            const deck = data.drawDeck || [];
+            const statusLabel = document.getElementById('game-status');
+            if (gameStatus === 'waiting') {
+                statusLabel.innerText = "รอเปิดการแข่งขัน...";
+            } else if (gameStatus === 'playing') {
+                statusLabel.innerText = `อยู่ระหว่างการแข่งขัน (การ์ดในกองเหลือ ${deck.length} ใบ) - ตาของ Player ${currentTurn}`;
+            } else {
+                statusLabel.innerText = `สิ้นสุดการแข่งขัน! - ผู้ชนะคือ ${getWinnerName(data.scores)}`;
+            }
+        }
+
+        function renderPlayerHand(pNum, handList = [], isMe) {
+            const frame = document.getElementById(`frame-seat-${pNum}`);
+            frame.innerHTML = '';
+
+            for (let i = 0; i < 6; i++) {
+                const card = handList[i];
+                if (card) {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.id = `card-${card.id}`;
+                    
+                    if (isMe) {
+                        cardDiv.className = `card-item ${card.type === 'formula' ? 'card-formula' : 'card-answer'}`;
+                        cardDiv.innerHTML = card.text;
+                        if (selectedCards.includes(card.id)) cardDiv.classList.add('card-selected');
+                        cardDiv.onclick = () => toggleSelectCard(card.id);
+                    } else {
+                        cardDiv.className = 'card-item card-back';
+                    }
+                    frame.appendChild(cardDiv);
+                } else {
+                    const emptySlot = document.createElement('div');
+                    emptySlot.className = 'empty-slot';
+                    frame.appendChild(emptySlot);
+                }
+            }
+
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    renderMathInElement(frame, { delimiters: [{left: '$', right: '$', display: false}] });
+                }
+            }, 50);
+        }
+
+        function renderBoardCards(discards = [], matched = []) {
+            for (let i = 0; i < 54; i++) {
+                const slot = document.getElementById(`board-slot-${i}`);
+                if (slot) slot.innerHTML = '';
+            }
+
+            discards.forEach((card, idx) => {
+                if (idx < 54) {
+                    const slot = document.getElementById(`board-slot-${idx}`);
+                    if (slot) {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = `card-item ${card.type === 'formula' ? 'card-formula' : 'card-answer'}`;
+                        cardDiv.innerHTML = card.text;
+                        slot.appendChild(cardDiv);
+                    }
+                }
+            });
+
+            matched.forEach((card, idx) => {
+                const targetSlotIndex = 53 - idx;
+                if (targetSlotIndex >= 0) {
+                    const slot = document.getElementById(`board-slot-${targetSlotIndex}`);
+                    if (slot) {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = `card-item ${card.type === 'formula' ? 'card-formula' : 'card-answer'}`;
+                        cardDiv.style.borderColor = '#22c55e';
+                        cardDiv.innerHTML = card.text;
+                        slot.appendChild(cardDiv);
+                    }
+                }
+            });
+
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.getElementById('board-slots'), { delimiters: [{left: '$', right: '$', display: false}] });
+                }
+            }, 50);
+        }
+
+        function toggleSelectCard(cardId) {
+            const index = selectedCards.indexOf(cardId);
+            if (index > -1) {
+                selectedCards.splice(index, 1);
+            } else {
+                if (selectedCards.length < 2) {
+                    selectedCards.push(cardId);
+                } else {
+                    selectedCards = [cardId];
+                }
+            }
+            if (localGameState) updateGameUI(localGameState);
+        }
+
+        function onClickStartGame() {
+            const shuffledDeck = [...CARD_DB].sort(() => Math.random() - 0.5);
+
+            const playerHands = {
+                player1: [shuffledDeck[0], shuffledDeck[4], shuffledDeck[8], shuffledDeck[12], shuffledDeck[16]],
+                player2: [shuffledDeck[1], shuffledDeck[5], shuffledDeck[9], shuffledDeck[13], shuffledDeck[17]],
+                player3: [shuffledDeck[2], shuffledDeck[6], shuffledDeck[10], shuffledDeck[14], shuffledDeck[18]],
+                player4: [shuffledDeck[3], shuffledDeck[7], shuffledDeck[11], shuffledDeck[15], shuffledDeck[19]]
+            };
+
+            playerHands.player1.push(shuffledDeck[20]);
+            const remainingDeck = shuffledDeck.slice(21);
+
+            const initialGameState = {
+                gameStatus: 'playing',
+                currentTurn: 1,
+                drawDeck: remainingDeck,
+                playerHands: playerHands,
+                boardDiscards: [],
+                matchedBoard: [],
+                scores: { player1: 0, player2: 0, player3: 0, player4: 0 }
+            };
+
+            update(tableRef, initialGameState);
+        }
+
+        window.actDiscard = function(pNum) {
+            if (selectedCards.length !== 1) {
+                alert("กรุณาเลือกการ์ด 1 ใบเพื่อทิ้งครับ!");
+                return;
+            }
+
+            const cardId = selectedCards[0];
+            const pKey = `player${pNum}`;
+            const hand = localGameState.playerHands[pKey] || [];
+            const cardToDiscard = hand.find(c => c.id === cardId);
+
+            if (!cardToDiscard) return;
+
+            const newHand = hand.filter(c => c.id !== cardId);
+            const newDiscards = [...(localGameState.boardDiscards || []), cardToDiscard];
+            const nextTurn = (pNum % 4) + 1;
+
+            const updates = {};
+            updates[`/playerHands/${pKey}`] = newHand;
+            updates[`/boardDiscards`] = newDiscards;
+            updates[`/currentTurn`] = nextTurn;
+
+            update(tableRef, updates);
+            selectedCards = [];
+        };
+
+        window.actDrawDeck = function(pNum) {
+            const deck = localGameState.drawDeck || [];
+            if (deck.length === 0) {
+                alert("การ์ดในกองหมดแล้ว!");
+                return;
+            }
+
+            const pKey = `player${pNum}`;
+            const hand = localGameState.playerHands[pKey] || [];
+
+            if (hand.length >= 6) {
+                alert("การ์ดในมือเต็ม 6 ใบแล้ว!");
+                return;
+            }
+
+            const drawnCard = deck[0];
+            const remainingDeck = deck.slice(1);
+            const newHand = [...hand, drawnCard];
+
+            const updates = {};
+            updates[`/drawDeck`] = remainingDeck;
+            updates[`/playerHands/${pKey}`] = newHand;
+
+            if (remainingDeck.length === 0) {
+                updates[`/gameStatus`] = 'ended';
+            }
+
+            update(tableRef, updates);
+        };
+
+        window.actTakeFriend = function(pNum) {
+            const discards = localGameState.boardDiscards || [];
+            if (discards.length === 0) {
+                alert("ยังไม่มีการ์ดที่เพื่อนทิ้งบนกระดาน!");
+                return;
+            }
+
+            const pKey = `player${pNum}`;
+            const hand = localGameState.playerHands[pKey] || [];
+
+            if (hand.length >= 6) {
+                alert("การ์ดในมือเต็ม 6 ใบแล้ว!");
+                return;
+            }
+
+            const lastDiscardedCard = discards[discards.length - 1];
+            const newDiscards = discards.slice(0, -1);
+            const newHand = [...hand, lastDiscardedCard];
+
+            const updates = {};
+            updates[`/boardDiscards`] = newDiscards;
+            updates[`/playerHands/${pKey}`] = newHand;
+
+            update(tableRef, updates);
+        };
+
+        window.actMatchCards = function(pNum) {
+            if (selectedCards.length !== 2) {
+                alert("กรุณาเลือกการ์ด 2 ใบเพื่อจับคู่ครับ!");
+                return;
+            }
+
+            const pKey = `player${pNum}`;
+            const hand = localGameState.playerHands[pKey] || [];
+            const card1 = hand.find(c => c.id === selectedCards[0]);
+            const card2 = hand.find(c => c.id === selectedCards[1]);
+
+            if (!card1 || !card2) return;
+
+            if (card1.pairId === card2.pairId && card1.type !== card2.type) {
+                const newScore = (localGameState.scores[pKey] || 0) + 1;
+                const newHand = hand.filter(c => c.id !== card1.id && c.id !== card2.id);
+                const newMatched = [...(localGameState.matchedBoard || []), card1, card2];
+
+                const updates = {};
+                updates[`/scores/${pKey}`] = newScore;
+                updates[`/playerHands/${pKey}`] = newHand;
+                updates[`/matchedBoard`] = newMatched;
+
+                update(tableRef, updates);
+                alert("🎉 ถูกต้อง! ได้รับ +1 แต้ม");
+            } else {
+                alert("❌ สูตรที่คุณเลือกไม่ถูกต้อง! กรุณาเลือกการ์ดทิ้งลงกระดาน 1 ใบ");
+            }
+
+            selectedCards = [];
+        };
+
+        // 🎯 แก้ไขฟังก์ชันกดออกจากเกมให้คืนที่นั่งใน Firebase
+        async function leaveGameAndRedirect() {
+            if (tableId && mySlotKey) {
+                try {
+                    // 1. ลบผู้เล่นคนนี้ออกจาก Node 'players' ของโต๊ะ
+                    const playerRef = ref(db, `tables/${tableId}/players/${mySlotKey}`);
+                    await remove(playerRef);
+
+                    // 2. ดึงข้อมูลผู้เล่นที่เหลือในโต๊ะมาตรวจสอบ
+                    const playersSnapshot = await get(ref(db, `tables/${tableId}/players`));
+                    const remainingPlayers = playersSnapshot.val() || {};
+                    const activeCount = Object.keys(remainingPlayers).length;
+
+                    // 3. ถ้าผู้เล่นน้อยกว่า 4 คน ให้ปรับสถานะโต๊ะกลับเป็น 'open' และไม่เต็ม
+                    if (activeCount < 4) {
+                        await update(ref(db, `tables/${tableId}`), {
+                            isClosed: false,
+                            status: 'open'
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error updating Firebase on leave:", error);
+                }
+            }
+
+            // เคลียร์ค่า Session และกลับสู่หน้าหลัก
+            sessionStorage.removeItem('my_player_slot');
+            sessionStorage.removeItem('current_table_id');
+            window.location.href = 'MainLogin.html';
+        }
+
+        // 🎯 ดักจับกรณีผู้เล่นปิด Tab หรือ Refresh หน้าจอ
+        window.addEventListener('beforeunload', () => {
+            if (tableId && mySlotKey) {
+                const playerRef = ref(db, `tables/${tableId}/players/${mySlotKey}`);
+                remove(playerRef);
+            }
+        });
+
+        function getWinnerName(scores) {
+            if (!scores) return 'ไม่มี';
+            let maxScore = -1;
+            let winner = '';
+            for (const [pKey, score] of Object.entries(scores)) {
+                if (score > maxScore) {
+                    maxScore = score;
+                    winner = pKey.replace('player', 'Player ');
+                }
+            }
+            return `${winner} (${maxScore} แต้ม)`;
+        }
+    </script>
+</body>
+</html>

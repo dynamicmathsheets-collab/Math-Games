@@ -3,218 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Game Board Layout - Cozy Purple</title>
+    <title>Derivative Card Game - Spectator View</title>
     
-    <!-- KaTeX CSS -->
+    <!-- KaTeX CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: system-ui, -apple-system, sans-serif;
-            /* พื้นหลังโทนม่วงเข้ม สบายตา */
             background: linear-gradient(135deg, #0f0c1b 0%, #1a102f 50%, #130924 100%);
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            position: relative;
+            height: 100vh; width: 100vw; overflow: hidden; position: relative; color: #f3e8ff;
         }
 
-        /* --- สี่เหลี่ยมใหญ่ตรงกลาง --- */
+        .top-controls {
+            position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 50;
+            display: flex; gap: 12px; align-items: center;
+        }
+
+        .badge-spectator {
+            background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7;
+            padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+        }
+
+        .btn-exit {
+            background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid #ef4444;
+            padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease; border: none;
+        }
+        .btn-exit:hover { background: rgba(239, 68, 68, 0.3); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+
+        /* กระดานกลาง */
         .center-board {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 820px;
-            height: 600px;
-            /* โทนม่วงมืดละมุน */
-            background: linear-gradient(145deg, #1e1535, #130c24);
-            border: 3px solid #a855f7;
-            border-radius: 24px;
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.6);
-            
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 12px;
-            gap: 10px;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 820px; height: 580px; background: linear-gradient(145deg, #1e1535, #130c24);
+            border: 3px solid #a855f7; border-radius: 24px; padding: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+        }
+        .board-card-slots-area { 
+            display: grid; grid-template-columns: repeat(6, 120px); grid-template-rows: repeat(9, 48px); gap: 6px; 
+        }
+        .board-drop-slot { 
+            width: 120px; height: 48px; border: 1px dashed rgba(216, 180, 254, 0.15); 
+            border-radius: 8px; background: rgba(255, 255, 255, 0.015); 
+            display: flex; align-items: center; justify-content: center; 
         }
 
-        /* --- ช่องบอกจำนวนการ์ดเหลือ ด้านบน (120x48px) --- */
-        .single-card-slot {
-            width: 120px;
-            height: 48px;
-            background: rgba(23, 15, 38, 0.95);
-            border: 2px dashed #f59e0b;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fbbf24;
-            font-size: 11px;
-            font-weight: bold;
-            box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
-            flex-shrink: 0;
+        /* กรอบที่นั่งผู้เล่น 4 มุม */
+        .player-wrapper {
+            position: absolute; width: 280px; display: flex; flex-direction: column; gap: 6px;
         }
 
-        /* --- พื้นที่รองรับการ์ดบนโต๊ะกลาง 54 ช่อง (6 คอลัมน์ x 9 แถว) --- */
-        .board-card-slots-area {
-            border: 1px dashed rgba(216, 180, 254, 0.2);
-            border-radius: 12px;
-            padding: 10px;
-            
-            display: grid;
-            grid-template-columns: repeat(6, 120px);
-            grid-template-rows: repeat(9, 48px);
-            gap: 6px;
-            justify-content: center;
-            align-content: center;
-        }
-
-        /* ช่องวางการ์ดบนโต๊ะ ล็อคขนาด 120px x 48px */
-        .board-drop-slot {
-            width: 120px;
-            height: 48px;
-            border: 1px dashed rgba(216, 180, 254, 0.15);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.015);
-            flex-shrink: 0;
-        }
-
-        /* --- กรอบเฟรมเก็บการ์ด 6 ใบ (2x3) --- */
         .card-frame {
-            position: absolute;
-            width: 268px;
-            padding: 10px;
-            background: #1b132e;
-            border: 2px solid #581c87;
-            border-radius: 14px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            z-index: 10;
+            width: 100%; min-height: 178px; padding: 10px; background: #1b132e;
+            border: 2px solid #581c87; border-radius: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            position: relative; transition: all 0.3s ease;
         }
 
-        /* ตำแหน่ง 4 มุม (คุมโทนม่วงเฉดต่างๆ) */
-        .top-left     { top: 16px; left: 16px; border-color: #818cf8; } /* ม่วงคราม */
-        .top-right    { top: 16px; right: 16px; border-color: #f472b6; } /* ม่วงชมพู */
-        .bottom-left  { bottom: 16px; left: 16px; border-color: #34d399; } /* เขียวพาสเทลตัดโทน */
-        .bottom-right { bottom: 16px; right: 16px; border-color: #c084fc; } /* ม่วงลาเวนเดอร์ */
+        .seat-header {
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
+            position: absolute; top: -24px; left: 0; padding: 0 4px;
+        }
+        .seat-label { font-size: 13px; font-weight: bold; color: #a78bfa; }
+        .score-badge { font-size: 12px; font-weight: bold; color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.3); }
 
-        /* การ์ดฝั่งซ้าย (สูตร) - 120px x 48px */
-        .card-formula {
-            width: 120px;
-            height: 48px;
-            background: linear-gradient(180deg, #2e1d4d 0%, #1a102f 100%);
-            border: 1px solid #6b21a8;
-            color: #f3e8ff;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            padding: 2px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        .p-pos-1 { bottom: 16px; left: 16px; }
+        .p-pos-2 { top: 32px; left: 16px; }
+        .p-pos-3 { top: 32px; right: 16px; }
+        .p-pos-4 { bottom: 16px; right: 16px; }
+
+        .active-turn-frame {
+            border-color: #22c55e !important;
+            box-shadow: 0 0 18px rgba(34, 197, 94, 0.6) !important;
         }
 
-        /* การ์ดฝั่งขวา (เฉลย) - 120px x 48px */
-        .card-answer {
-            width: 120px;
-            height: 48px;
-            background: #faf5ff;
-            border: 1px solid #e9d5ff;
-            color: #2e1065;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            padding: 2px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        /* สไตล์การ์ด */
+        .card-item { 
+            width: 120px; height: 48px; border-radius: 8px; display: flex; align-items: center; 
+            justify-content: center; font-size: 11px; user-select: none;
         }
+        .card-formula { background: linear-gradient(180deg, #2e1d4d 0%, #1a102f 100%); border: 1px solid #6b21a8; color: #f3e8ff; }
+        .card-answer { background: #faf5ff; border: 1px solid #e9d5ff; color: #2e1065; }
+
+        .empty-slot { width: 120px; height: 48px; border: 1px dashed rgba(168, 85, 247, 0.15); border-radius: 8px; }
+        .seat-offline { border-color: rgba(88, 28, 135, 0.3); opacity: 0.4; }
     </style>
 </head>
 <body>
 
-    <!-- 1. เฟรมการ์ด มุมซ้ายบน -->
-    <div class="card-frame top-left">
-        <div class="card-formula">$\frac{d}{dx}(c \cdot u)$</div>
-        <div class="card-answer">$c \cdot \frac{du}{dx}$</div>
-        <div class="card-formula">$\frac{d}{dx}(C)$</div>
-        <div class="card-answer">$0$</div>
-        <div class="card-formula">$\frac{d}{dx}(\cos u)$</div>
-        <div class="card-answer">$-\sin u \cdot \frac{du}{dx}$</div>
+    <div class="top-controls">
+        <div class="badge-spectator">👁️ โหมดผู้รับชม (Spectator - Open Cards)</div>
+        <button class="btn-exit" onclick="exitSpectator()">ออกจากห้อง</button>
     </div>
 
-    <!-- 2. เฟรมการ์ด มุมขวาบน -->
-    <div class="card-frame top-right">
-        <div class="card-formula">$\frac{d}{dx}(e^u)$</div>
-        <div class="card-answer">$e^u \cdot \frac{du}{dx}$</div>
-        <div class="card-formula">$\frac{d}{dx}(\cosh u)$</div>
-        <div class="card-answer">$\sinh u \cdot \frac{du}{dx}$</div>
-        <div class="card-formula">$\frac{d}{dx}(\arcsin u)$</div>
-        <div class="card-answer">$\frac{1}{\sqrt{1-u^2}} \cdot \frac{du}{dx}$</div>
+    <!-- ที่นั่งผู้เล่น 4 มุม -->
+    <div class="player-wrapper p-pos-1" id="wrap-seat-1">
+        <div class="seat-header"><span class="seat-label" id="label-seat-1">Player 1</span><span class="score-badge" id="score-1">0 แต้ม</span></div>
+        <div class="card-frame" id="frame-seat-1"></div>
     </div>
 
-    <!-- 3. เฟรมการ์ด มุมซ้ายล่าง -->
-    <div class="card-frame bottom-left">
-        <div class="card-formula">$\frac{d}{dx}(u + v)$</div>
-        <div class="card-answer">$\frac{du}{dx} + \frac{dv}{dx}$</div>
-        <div class="card-formula">$\frac{d}{dx}(x)$</div>
-        <div class="card-answer">$1$</div>
-        <div class="card-formula">$\frac{d}{dx}(\tan u)$</div>
-        <div class="card-answer">$\sec^2 u \cdot \frac{du}{dx}$</div>
+    <div class="player-wrapper p-pos-2" id="wrap-seat-2">
+        <div class="seat-header"><span class="seat-label" id="label-seat-2">Player 2</span><span class="score-badge" id="score-2">0 แต้ม</span></div>
+        <div class="card-frame" id="frame-seat-2"></div>
     </div>
 
-    <!-- 4. เฟรมการ์ด มุมขวาล่าง -->
-    <div class="card-frame bottom-right">
-        <div class="card-formula">$\frac{d}{dx}(\ln u)$</div>
-        <div class="card-answer">$\frac{1}{u} \cdot \frac{du}{dx}$</div>
-        <div class="card-formula">$\frac{d}{dx}(\sinh u)$</div>
-        <div class="card-answer">$\cosh u \cdot \frac{du}{dx}$</div>
-        <div class="card-formula">$\frac{d}{dx}(\arctan u)$</div>
-        <div class="card-answer">$\frac{1}{1+u^2} \cdot \frac{du}{dx}$</div>
+    <div class="player-wrapper p-pos-3" id="wrap-seat-3">
+        <div class="seat-header"><span class="seat-label" id="label-seat-3">Player 3</span><span class="score-badge" id="score-3">0 แต้ม</span></div>
+        <div class="card-frame" id="frame-seat-3"></div>
     </div>
 
-    <!-- สี่เหลี่ยมใหญ่ตรงกลาง -->
+    <div class="player-wrapper p-pos-4" id="wrap-seat-4">
+        <div class="seat-header"><span class="seat-label" id="label-seat-4">Player 4</span><span class="score-badge" id="score-4">0 แต้ม</span></div>
+        <div class="card-frame" id="frame-seat-4"></div>
+    </div>
+
+    <!-- กระดานกลาง -->
     <div class="center-board">
-        <!-- ช่องบอกจำนวนการ์ดเหลือ ด้านบน -->
-        <div class="single-card-slot">
-            <span>การ์ดเหลือ 54 ใบ</span>
-        </div>
-
-        <!-- พื้นที่ช่องเส้นประ 54 ช่อง (6 คอลัมน์ x 9 แถว) -->
-        <div class="board-card-slots-area">
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-            <div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div><div class="board-drop-slot"></div>
-        </div>
+        <div style="color: #fbbf24; font-size: 13px; font-weight: bold;" id="game-status">เชื่อมต่อสัญญาณการถ่ายทอดสด...</div>
+        <div class="board-card-slots-area" id="board-slots"></div>
     </div>
 
-    <!-- KaTeX JavaScript -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
-        onload="renderMathInElement(document.body, {
-            delimiters: [
-                {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false}
-            ]
-        });">
-    </script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // Firebase Config ของปู่
+        const firebaseConfig = {
+            apiKey: "AIzaSyDp3MXKZTOyVw_bJ2TJiSv_apHfC3UQEnQ",
+            authDomain: "multiplayer-math-game-e021c.firebaseapp.com",
+            databaseURL: "https://multiplayer-math-game-e021c-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "multiplayer-math-game-e021c",
+            storageBucket: "multiplayer-math-game-e021c.firebasestorage.app",
+            messagingSenderId: "389643255813",
+            appId: "1:389643255813:web:b4db5d43e392601a7d5c6c",
+            measurementId: "G-RYP3M031NV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const tableId = sessionStorage.getItem('current_table_id') || 'MATH-101';
+        const tableRef = ref(db, `tables/${tableId}`);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            setupBoardUI();
+
+            // ฟังค่า Realtime จาก Firebase
+            onValue(tableRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+                updateSpectatorUI(data);
+            });
+        });
+
+        function setupBoardUI() {
+            const boardSlots = document.getElementById('board-slots');
+            boardSlots.innerHTML = '';
+            for (let i = 0; i < 54; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'board-drop-slot';
+                slot.id = `board-slot-${i}`;
+                boardSlots.appendChild(slot);
+            }
+        }
+
+        function updateSpectatorUI(data) {
+            const currentTurn = data.currentTurn || 1;
+            const gameStatus = data.gameStatus || 'waiting';
+            const activePlayers = data.players || {};
+
+            [1, 2, 3, 4].forEach(pNum => {
+                const frame = document.getElementById(`frame-seat-${pNum}`);
+                const label = document.getElementById(`label-seat-${pNum}`);
+                const scoreBadge = document.getElementById(`score-${pNum}`);
+                const pKey = `player${pNum}`;
+
+                const isOccupied = activePlayers[pKey] !== undefined && activePlayers[pKey] !== null;
+                const isCurrentTurn = (pNum === currentTurn && gameStatus === 'playing');
+
+                if (isOccupied) {
+                    frame.classList.remove('seat-offline');
+                    label.innerText = `Player ${pNum}`;
+                } else {
+                    frame.classList.add('seat-offline');
+                    label.innerText = `Player ${pNum} (ว่าง)`;
+                }
+
+                if (isCurrentTurn) {
+                    frame.classList.add('active-turn-frame');
+                } else {
+                    frame.classList.remove('active-turn-frame');
+                }
+
+                const score = (data.scores && data.scores[pKey]) || 0;
+                scoreBadge.innerText = `${score} แต้ม`;
+
+                renderSpectatorHand(pNum, data.playerHands ? data.playerHands[pKey] : [], isOccupied);
+            });
+
+            renderBoardCards(data.boardDiscards || [], data.matchedBoard || []);
+
+            const deck = data.drawDeck || [];
+            const statusLabel = document.getElementById('game-status');
+            if (gameStatus === 'waiting') {
+                statusLabel.innerText = "🔴 ถ่ายทอดสด: รอผู้เล่นเริ่มการแข่งขัน...";
+            } else if (gameStatus === 'playing') {
+                statusLabel.innerText = `🔴 ถ่ายทอดสด: กำลังแข่งขัน (กองเหลือ ${deck.length} ใบ) - ตาของ Player ${currentTurn}`;
+            } else {
+                statusLabel.innerText = `🏆 จบการแข่งขัน! - ผู้ชนะคือ ${getWinnerName(data.scores)}`;
+            }
+        }
+
+        // 🎯 เปิดหงายการ์ดของผู้เล่นทุกคน ให้ผู้ชมเห็นสูตรทั้งหมด
+        function renderSpectatorHand(pNum, handList = [], isOccupied) {
+            const frame = document.getElementById(`frame-seat-${pNum}`);
+            frame.innerHTML = '';
+
+            if (!isOccupied) {
+                for (let i = 0; i < 6; i++) {
+                    const emptySlot = document.createElement('div');
+                    emptySlot.className = 'empty-slot';
+                    frame.appendChild(emptySlot);
+                }
+                return;
+            }
+
+            for (let i = 0; i < 6; i++) {
+                const card = handList[i];
+                if (card) {
+                    const cardDiv = document.createElement('div');
+                    // หงายการ์ดและแสดงตัวข้อความ/สูตร
+                    cardDiv.className = `card-item ${card.type === 'formula' ? 'card-formula' : 'card-answer'}`;
+                    cardDiv.innerHTML = card.text;
+                    frame.appendChild(cardDiv);
+                } else {
+                    const emptySlot = document.createElement('div');
+                    emptySlot.className = 'empty-slot';
+                    frame.appendChild(emptySlot);
+                }
+            }
+
+            // เรนเดอร์สูตรคณิตศาสตร์ KaTeX บนมือของผู้เล่น
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    renderMathInElement(frame, { delimiters: [{left: '$', right: '$', display: false}] });
+                }
+            }, 50);
+        }
+
+        function renderBoardCards(discards = [], matched = []) {
+            for (let i = 0; i < 54; i++) {
+                const slot = document.getElementById(`board-slot-${i}`);
+                if (slot) slot.innerHTML = '';
+            }
+
+            // การ์ดที่ทิ้งลงกลางกระดาน
+            discards.forEach((card, idx) => {
+                if (idx < 54) {
+                    const slot = document.getElementById(`board-slot-${idx}`);
+                    if (slot) {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = `card-item ${card.type === 'formula' ? 'card-formula' : 'card-answer'}`;
+                        cardDiv.innerHTML = card.text;
+                        slot.appendChild(cardDiv);
+                    }
+                }
+            });
+
+            // การ์ดที่จับคู่สำเร็จแล้ว
+            matched.forEach((card, idx) => {
+                const targetSlotIndex = 53 - idx;
+                if (targetSlotIndex >= 0) {
+                    const slot = document.getElementById(`board-slot-${targetSlotIndex}`);
+                    if (slot) {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = `card-item ${card.type === 'formula' ? 'card-formula' : 'card-answer'}`;
+                        cardDiv.style.borderColor = '#22c55e';
+                        cardDiv.innerHTML = card.text;
+                        slot.appendChild(cardDiv);
+                    }
+                }
+            });
+
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.getElementById('board-slots'), { delimiters: [{left: '$', right: '$', display: false}] });
+                }
+            }, 50);
+        }
+
+        window.exitSpectator = function() {
+            sessionStorage.removeItem('current_table_id');
+            window.location.href = 'MainLogin.html';
+        };
+
+        function getWinnerName(scores) {
+            if (!scores) return 'ไม่มี';
+            let maxScore = -1;
+            let winner = '';
+            for (const [pKey, score] of Object.entries(scores)) {
+                if (score > maxScore) {
+                    maxScore = score;
+                    winner = pKey.replace('player', 'Player ');
+                }
+            }
+            return `${winner} (${maxScore} แต้ม)`;
+        }
+    </script>
 </body>
 </html>
